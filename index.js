@@ -209,6 +209,9 @@ const run = async (
 
   return div(
     div({ id: `treeview${rndid}` }),
+    style(`.gj-list .list-group-item {
+    background-color: #fff;    
+}` ),
     script(
       domReady(`
     const selected_id = ${JSON.stringify(state[pk_name])}
