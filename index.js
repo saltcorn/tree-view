@@ -146,6 +146,7 @@ const run = async (
 ) => {
   const table = await Table.findOne({ id: table_id });
   const fields = table.fields;
+  const pk_name = table.pk_name;
   readState(state, fields);
   const where = await stateFieldsToWhere({ fields, state, table });
   const joinFields = {};
@@ -153,6 +154,8 @@ const run = async (
   const unique_field = fields.find(
     (f) => (f.is_unique || f.primary_key) && state[f.name]
   );
+  const whereNoId = {...where}
+  delete whereNoId[pk_name]
   /*if (unique_field) {
     //https://dba.stackexchange.com/questions/175868/cte-get-all-parents-and-all-children-in-one-statement
     const schema = db.getTenantSchemaPrefix();
@@ -177,13 +180,12 @@ const run = async (
   }*/
 
   const rows = await table.getJoinedRows({
-    //where,
+    where: whereNoId,
     orderBy: order_field || undefined,
     nocase: order_fld?.type?.name === "String" ? true : undefined,
   });
 
   const rndid = Math.floor(Math.random() * 16777215).toString(16);
-  const pk_name = table.pk_name;
   const rowToData = (row, level = 0) => {
     const childRows = rows.filter((r) => r[parent_field] === row[pk_name]);
     const node = {
