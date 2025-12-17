@@ -183,14 +183,13 @@ const run = async (
   });
 
   const rndid = Math.floor(Math.random() * 16777215).toString(16);
+  const pk_name = table.pk_name;
   const rowToData = (row, level = 0) => {
-    const id = row[table.pk_name];
-    const childRows = rows.filter((r) => r[parent_field] === id);
+    const childRows = rows.filter((r) => r[parent_field] === row[pk_name]);
     const node = {
-      topic: row[title_field],
-      id,
+      text: row[title_field],
+      [pk_name]: row[pk_name],
       children: childRows.map((r) => rowToData(r, level + 1)),
-      style: {},
     };
     if (
       typeof expanded_max_level === "number" &&
@@ -212,7 +211,11 @@ const run = async (
     div({ id: `treeview${rndid}` }),
     script(
       domReady(`
-   
+    $('#treeview${rndid}').tree({
+                    uiLibrary: 'bootstrap5',
+                    dataSource: ${JSON.stringify(nodeData)},
+                    primaryKey: '${pk_name}'                    
+                });
     `)
     )
   );
