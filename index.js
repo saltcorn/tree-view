@@ -202,10 +202,10 @@ const run = async (
   let nodeData;
   let setRootForNewNodes = "";
 
-  const root = unique_field
-    ? rows.find((r) => r[unique_field.name] == state[unique_field.name])
-    : rows.find((r) => !r[parent_field]);
-  nodeData = rowToData(root);
+  const roots = unique_field
+    ? rows.filter((r) => r[unique_field.name] == state[unique_field.name])
+    : rows.filter((r) => !r[parent_field]);
+  nodeData = roots.map((r) => rowToData(r));
 
   return div(
     div({ id: `treeview${rndid}` }),
