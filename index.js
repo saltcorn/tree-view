@@ -153,7 +153,7 @@ const run = async (
   const unique_field = fields.find(
     (f) => (f.is_unique || f.primary_key) && state[f.name]
   );
-  if (unique_field) {
+  /*if (unique_field) {
     //https://dba.stackexchange.com/questions/175868/cte-get-all-parents-and-all-children-in-one-statement
     const schema = db.getTenantSchemaPrefix();
     const ufname = db.sqlsanitize(unique_field.name);
@@ -174,10 +174,10 @@ const run = async (
       [state[unique_field.name]]
     );
     where[unique_field.name] = { in: idres.rows.map((r) => r[ufname]) };
-  }
+  }*/
 
   const rows = await table.getJoinedRows({
-    where,
+    //where,
     orderBy: order_field || undefined,
     nocase: order_fld?.type?.name === "String" ? true : undefined,
   });
@@ -202,20 +202,31 @@ const run = async (
   let nodeData;
   let setRootForNewNodes = "";
 
-  const roots = unique_field
-    ? rows.filter((r) => r[unique_field.name] == state[unique_field.name])
-    : rows.filter((r) => !r[parent_field]);
+  const roots = rows.filter((r) => !r[parent_field]);
   nodeData = roots.map((r) => rowToData(r));
 
   return div(
     div({ id: `treeview${rndid}` }),
     script(
       domReady(`
-    $('#treeview${rndid}').tree({
+    const selected_id = ${JSON.stringify(state[pk_name])}
+    const tree = $('#treeview${rndid}').tree({
                     uiLibrary: 'bootstrap5',
                     dataSource: ${JSON.stringify(nodeData)},
-                    primaryKey: '${pk_name}'                    
+                    primaryKey: '${pk_name}',
+                    selectionType: 'single',
+                    cascadeSelection: false
                 });
+    tree.on('select', function (e, node, id) {
+    console.log({id, selected_id})
+    if(id!=selected_id)
+       set_state_field('${pk_name}',id)
+      })
+    ${state[pk_name] ? `
+      const selnode = $("li[data-id=${state[pk_name]}]")
+      tree.select(selnode);
+      tree.expand(selnode);
+      selnode.parents("li[data-id]").each(function() {tree.expand($(this))})` : ""}
     `)
     )
   );
