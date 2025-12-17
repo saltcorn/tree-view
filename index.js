@@ -105,6 +105,12 @@ const configuration_workflow = () =>
                   options: order_options,
                 },
               },
+              {
+                name: "filtering",
+                label: "Filtering",
+                type: "Bool",
+                sublabel: "Selecting a node sets state filter",
+              },
             ],
           });
         },
@@ -118,28 +124,11 @@ const run = async (
   {
     title_field,
     parent_field,
-    color_field,
-    text_color_field,
-    edit_view,
-    direction,
-    root_relation_field,
-    view_height,
-    view_height_units,
-    annotations,
-    link_style,
+
     order_field,
-    node_gap_h,
-    node_gap_v,
-    expander_visible,
-    newline_tags,
-    set_tag_color,
-    tag_text_color,
-    tag_bg_color,
-    set_palette,
-    palette,
+
     expanded_max_level,
-    read_only,
-    link_icon,
+    filtering,
   },
   state,
   extraArgs
@@ -154,8 +143,8 @@ const run = async (
   const unique_field = fields.find(
     (f) => (f.is_unique || f.primary_key) && state[f.name]
   );
-  const whereNoId = {...where}
-  delete whereNoId[pk_name]
+  const whereNoId = { ...where };
+  delete whereNoId[pk_name];
   /*if (unique_field) {
     //https://dba.stackexchange.com/questions/175868/cte-get-all-parents-and-all-children-in-one-statement
     const schema = db.getTenantSchemaPrefix();
@@ -213,7 +202,7 @@ const run = async (
     div({ id: `treeview${rndid}` }),
     style(`.gj-list .list-group-item {
     background-color: #fff;    
-}` ),
+}`),
     script(
       domReady(`
     const selected_id = ${JSON.stringify(state[pk_name])}
@@ -224,15 +213,23 @@ const run = async (
                     selectionType: 'single',
                     cascadeSelection: false
                 });
-    tree.on('select', function (e, node, id) {
+    ${
+      filtering
+        ? `tree.on('select', function (e, node, id) {
     if(id!=selected_id)
        set_state_field('${pk_name}',id)
-      })
-    ${state[pk_name] ? `
+      })`
+        : ""
+    }
+    ${
+      state[pk_name] && filtering
+        ? `
       const selnode = $("li[data-id=${state[pk_name]}]")
       tree.select(selnode);
       tree.expand(selnode);
-      selnode.parents("li[data-id]").each(function() {tree.expand($(this))})` : ""}
+      selnode.parents("li[data-id]").each(function() {tree.expand($(this))})`
+        : ""
+    }
     `)
     )
   );
