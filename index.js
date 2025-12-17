@@ -36,13 +36,13 @@ const headers = [
   {
     script: `/plugins/public/tree-view@${
       require("./package.json").version
-    }/gijgo.min.js`,
+    }/js/gijgo.min.js`,
     onlyViews: ["TreeView"],
   },
   {
     css: `/plugins/public/tree-view@${
       require("./package.json").version
-    }/gijgo.min.css`,
+    }/js/gijgo.min.css`,
     onlyViews: ["TreeView"],
   },
 ];
