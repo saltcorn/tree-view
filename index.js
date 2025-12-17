@@ -189,6 +189,8 @@ const run = async (
     const node = {
       text: row[title_field],
       [pk_name]: row[pk_name],
+      checked: false,
+      hasChildren: false,
       children: childRows.map((r) => rowToData(r, level + 1)),
     };
     if (
