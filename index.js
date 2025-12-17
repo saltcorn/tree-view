@@ -218,7 +218,6 @@ const run = async (
                     cascadeSelection: false
                 });
     tree.on('select', function (e, node, id) {
-    console.log({id, selected_id})
     if(id!=selected_id)
        set_state_field('${pk_name}',id)
       })
