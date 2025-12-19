@@ -230,7 +230,7 @@ const run = async (
     ${
       drag_and_drop
         ? `tree.on('nodeDrop', function (e, id, parentId, orderNumber) {
-           var params = { id: id, parentId: parentId, orderNumber: orderNumber };     
+           var params = { id: id, parent_id: parentId, order_number: orderNumber };     
            view_post('${viewname}', 'drag_drop', params);                                      
         });`
         : ""
@@ -253,7 +253,7 @@ const drag_drop = async (
   table_id,
   viewname,
   { title_field, parent_field, read_only },
-  { id, topic, parent_id },
+  { id, order_number, parent_id },
   { req }
 ) => {
   if (read_only) return { json: { error: "Read only mode" } };
@@ -267,14 +267,12 @@ const drag_drop = async (
     return { json: { error: "not authorized" } };
   }
   const updRow = {};
-  if (topic) updRow[title_field] = topic;
-  if (parent_id === "root") updRow[parent_field] = null;
+  //if (topic) updRow[title_field] = topic;
+  if (id && typeof parent_id === "undefined") updRow[parent_field] = null;
   else if (parent_id) updRow[parent_field] = parent_id;
   await table.updateRow(updRow, id, req.user || { role_id: public_user_role });
   return { json: { success: "ok" } };
 };
-
-
 
 module.exports = {
   sc_plugin_api_version: 1,
