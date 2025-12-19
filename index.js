@@ -111,6 +111,11 @@ const configuration_workflow = () =>
                 type: "Bool",
                 sublabel: "Selecting a node sets state filter",
               },
+              {
+                name: "drag_and_drop",
+                label: "Drag and drop",
+                type: "Bool",
+              },
             ],
           });
         },
@@ -126,7 +131,7 @@ const run = async (
     parent_field,
 
     order_field,
-
+    drag_and_drop,
     expanded_max_level,
     filtering,
   },
@@ -211,7 +216,8 @@ const run = async (
                     dataSource: ${JSON.stringify(nodeData)},
                     primaryKey: '${pk_name}',
                     selectionType: 'single',
-                    cascadeSelection: false
+                    cascadeSelection: false,
+                    dragAndDrop: ${JSON.stringify(drag_and_drop)}
                 });
     ${
       filtering
@@ -219,6 +225,14 @@ const run = async (
     if(id!=selected_id)
        set_state_field('${pk_name}',id)
       })`
+        : ""
+    }
+    ${
+      drag_and_drop
+        ? `tree.on('nodeDrop', function (e, id, parentId, orderNumber) {
+           var params = { id: id, parentId: parentId, orderNumber: orderNumber };     
+           view_post('${viewname}', 'drag_drop', params);                                      
+        });`
         : ""
     }
     ${
@@ -235,7 +249,7 @@ const run = async (
   );
 };
 
-const change_node = async (
+const drag_drop = async (
   table_id,
   viewname,
   { title_field, parent_field, read_only },
@@ -260,88 +274,7 @@ const change_node = async (
   return { json: { success: "ok" } };
 };
 
-const delete_node = async (
-  table_id,
-  viewname,
-  { title_field, read_only },
-  { id },
-  { req }
-) => {
-  if (read_only) return { json: { error: "Read only mode" } };
 
-  const table = await Table.findOne({ id: table_id });
-
-  const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
-  if (
-    role > table.min_role_write &&
-    !(table.ownership_field || table.ownership_formula)
-  ) {
-    return { json: { error: "not authorized" } };
-  }
-  await table.deleteRows(
-    { [table.pk_name]: id },
-    req.user || { role_id: public_user_role }
-  );
-  return { json: { success: "ok" } };
-};
-
-const add_node = async (
-  table_id,
-  viewname,
-  {
-    title_field,
-    parent_field,
-    edit_view,
-    root_relation_field,
-    field_values_formula,
-    read_only,
-  },
-  { topic, parent_id, root_value },
-  { req }
-) => {
-  if (read_only) return { json: { error: "Read only mode" } };
-
-  const table = await Table.findOne({ id: table_id });
-
-  const role = req.isAuthenticated() ? req.user.role_id : public_user_role;
-  if (
-    role > table.min_role_write &&
-    !(table.ownership_field || table.ownership_formula)
-  ) {
-    return { json: { error: "not authorized" } };
-  }
-
-  const parent_id_val = parent_id === "root" ? null : parent_id;
-  let newRowValues = {};
-  if (field_values_formula) {
-    const ctx = getState().function_context;
-    if (parent_id_val) {
-      ctx.parent = await table.getRow({ [table.pk_name]: parent_id_val });
-    }
-    newRowValues = runInNewContext(`()=>(${field_values_formula})`, ctx)();
-  }
-  const newRow = {
-    ...newRowValues,
-    [title_field]: topic,
-    [parent_field]: parent_id_val,
-  };
-  if (
-    root_relation_field &&
-    root_value &&
-    typeof newRow[root_relation_field] === "undefined"
-  )
-    newRow[root_relation_field] = root_value;
-  const id = await table.insertRow(
-    newRow,
-    req.user || { role_id: public_user_role }
-  );
-  const newNode = { id, topic };
-  if (edit_view) {
-    newNode.hyperLink = `javascript:ajax_modal('/view/${edit_view}?${table.pk_name}=${id}')`;
-  }
-
-  return { json: { success: "ok", newNode } };
-};
 
 module.exports = {
   sc_plugin_api_version: 1,
@@ -356,7 +289,7 @@ module.exports = {
       get_state_fields,
       configuration_workflow,
       run,
-      routes: { change_node, add_node, delete_node },
+      routes: { drag_drop },
     },
   ],
 };
