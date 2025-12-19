@@ -69,7 +69,7 @@ const configuration_workflow = () =>
           const fields = table.fields;
 
           const order_options = fields.filter((f) =>
-            ["Integer", "Float", "Date", "String"].includes(f.type?.name)
+            ["Integer"].includes(f.type?.name)
           );
 
           return new Form({
@@ -101,6 +101,7 @@ const configuration_workflow = () =>
                 name: "order_field",
                 label: "Order field",
                 type: "String",
+                sublabel: "Optional. An Integer field",
                 attributes: {
                   options: order_options,
                 },
@@ -252,7 +253,7 @@ const run = async (
 const drag_drop = async (
   table_id,
   viewname,
-  { title_field, parent_field, read_only },
+  { title_field, parent_field, read_only, order_field },
   { id, order_number, parent_id },
   { req }
 ) => {
@@ -268,8 +269,13 @@ const drag_drop = async (
   }
   const updRow = {};
   //if (topic) updRow[title_field] = topic;
-  if (id && typeof parent_id === "undefined") updRow[parent_field] = null;
+  if (id && typeof parent_id === "undefined" && parent_field)
+    updRow[parent_field] = null;
   else if (parent_id) updRow[parent_field] = parent_id;
+
+  if (id && order_number && order_field && order_field !== table.pk_name)
+    updRow[order_field] = +order_number;
+
   await table.updateRow(updRow, id, req.user || { role_id: public_user_role });
   return { json: { success: "ok" } };
 };
