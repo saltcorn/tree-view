@@ -203,12 +203,24 @@ const run = async (
 
   const roots = rows.filter((r) => !r[parent_field]);
   nodeData = roots.map((r) => rowToData(r));
+  const isDark = extraArgs.req?.user?.lightDarkMode === "dark";
+  let bgDark;
+  if (isDark) {
+    const layout = getState().getLayout(extraArgs.req?.user);
+    bgDark = layout?.config?.backgroundColorDark;
+  }
 
   return div(
     div({ id: `treeview${rndid}` }),
     style(`.gj-list .list-group-item {
     background-color: #fff;    
 }`),
+    isDark &&
+      style(`
+      #treeview${rndid} .gj-list .list-group-item {
+        background-color: ${bgDark || "#222"};
+      }
+      `),
     script(
       domReady(`
     const selected_id = ${JSON.stringify(state[pk_name])}
