@@ -220,6 +220,12 @@ const run = async (
       #treeview${rndid} .gj-list .list-group-item {
         background-color: ${bgDark || "#222"};
       }
+      #treeview${rndid} .gj-list .list-group-item.active {
+        background-color: #0d6efd;
+      }
+      #treeview${rndid} .list-group-item.active ul li, #treeview${rndid} .list-group-item.active:focus ul li, #treeview${rndid} .list-group-item.active:hover ul li {
+        color: unset
+      }
       `),
     script(
       domReady(`
