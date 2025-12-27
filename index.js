@@ -178,6 +178,8 @@ const run = async (
     where: whereNoId,
     orderBy: order_field || undefined,
     nocase: order_fld?.type?.name === "String" ? true : undefined,
+    forUser: extraArgs.req.user || { role_id: public_user_role },
+    forPublic: !extraArgs.req.user,
   });
 
   const rndid = Math.floor(Math.random() * 16777215).toString(16);
