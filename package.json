@@ -1,6 +1,6 @@
 {
   "name": "@saltcorn/tree-view",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Tree view used for editing and filtering",
   "main": "index.js",
   "dependencies": {
