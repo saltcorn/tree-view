@@ -4,7 +4,10 @@ const Field = require("@saltcorn/data/models/field");
 const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
 const View = require("@saltcorn/data/models/view");
-const { eval_expression } = require("@saltcorn/data/models/expression");
+const {
+  eval_expression,
+  jsexprToWhere,
+} = require("@saltcorn/data/models/expression");
 const Workflow = require("@saltcorn/data/models/workflow");
 const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
 
@@ -15,7 +18,7 @@ const {
   readState,
   picked_fields_to_query,
 } = require("@saltcorn/data/plugin-helper");
-
+const { mergeIntoWhere } = require("@saltcorn/data/utils");
 const {
   text,
   div,
@@ -69,7 +72,7 @@ const configuration_workflow = () =>
           const fields = table.fields;
 
           const order_options = fields.filter((f) =>
-            ["Integer"].includes(f.type?.name)
+            ["Integer", "Float", "String"].includes(f.type?.name)
           );
 
           return new Form({
@@ -107,6 +110,30 @@ const configuration_workflow = () =>
                 },
               },
               {
+                name: "include_fml",
+                label: "Row inclusion formula",
+                class: "validate-expression",
+                sublabel:
+                  "Only include rows where this formula is true. " +
+                  "In scope:" +
+                  " " +
+                  [
+                    ...table.fields.map((f) => f.name),
+                    "user",
+                    "year",
+                    "month",
+                    "day",
+                    "today()",
+                  ]
+                    .map((s) => `<code>${s}</code>`)
+                    .join(", "),
+                type: "String",
+                help: {
+                  topic: "Inclusion Formula",
+                  context: { table_name: table.name },
+                },
+              },
+              {
                 name: "filtering",
                 label: "Filtering",
                 type: "Bool",
@@ -117,6 +144,11 @@ const configuration_workflow = () =>
                 label: "Drag and drop",
                 type: "Bool",
               },
+           /*   {
+                name: "expand_all",
+                label: "Expand all",
+                type: "Bool",
+              },*/
             ],
           });
         },
@@ -130,7 +162,7 @@ const run = async (
   {
     title_field,
     parent_field,
-
+    include_fml,
     order_field,
     drag_and_drop,
     expanded_max_level,
@@ -173,6 +205,10 @@ const run = async (
     );
     where[unique_field.name] = { in: idres.rows.map((r) => r[ufname]) };
   }*/
+  if (include_fml) {
+    let where1 = jsexprToWhere(include_fml, {}, fields);
+    mergeIntoWhere(whereNoId, where1 || {});
+  }
 
   const rows = await table.getJoinedRows({
     where: whereNoId,
@@ -292,8 +328,14 @@ const drag_drop = async (
   if (id && typeof parent_id === "undefined" && parent_field)
     updRow[parent_field] = null;
   else if (parent_id) updRow[parent_field] = parent_id;
-
-  if (id && order_number && order_field && order_field !== table.pk_name)
+  const order_fld = table.getField(order_field);
+  if (
+    id &&
+    order_number &&
+    order_field &&
+    order_field !== table.pk_name &&
+    order_fld?.type?.name === "Integer"
+  )
     updRow[order_field] = +order_number;
 
   await table.updateRow(updRow, id, req.user || { role_id: public_user_role });
