@@ -144,11 +144,11 @@ const configuration_workflow = () =>
                 label: "Drag and drop",
                 type: "Bool",
               },
-           /*   {
+              {
                 name: "expand_all",
                 label: "Expand all",
                 type: "Bool",
-              },*/
+              },
             ],
           });
         },
@@ -167,6 +167,7 @@ const run = async (
     drag_and_drop,
     expanded_max_level,
     filtering,
+    expand_all,
   },
   state,
   extraArgs
@@ -299,6 +300,12 @@ const run = async (
       tree.select(selnode);
       tree.expand(selnode);
       selnode.parents("li[data-id]").each(function() {tree.expand($(this))})`
+        : ""
+    }
+    ${
+      expand_all
+        ? `      
+      $("li[data-id]").each(function() {tree.expand($(this))})`
         : ""
     }
     `)
